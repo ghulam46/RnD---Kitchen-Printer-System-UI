@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arrivals Dashboard - index5</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          boxShadow: {
+            card: '0 1px 2px rgba(16,24,40,.04), 0 16px 40px -24px rgba(16,24,40,.25)',
+            modal: '0 32px 80px -24px rgba(15,23,42,.45)',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 8px; }
+    .seg-btn { transition: background .15s ease, color .15s ease; }
+    .rev-bar { transition: height .45s cubic-bezier(.2,.8,.3,1), filter .15s ease; }
+    .bar-btn { cursor: pointer; }
+    .bar-btn:hover .rev-bar { filter: brightness(1.08); }
+    .bar-btn:focus-visible { outline: 2px solid #7C3AED; outline-offset: 4px; border-radius: 10px; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+    .fade-up { animation: fadeUp .35s ease both; }
+    .modal-scrim { animation: scrimIn .2s ease both; }
+    .modal-panel { animation: modalIn .25s cubic-bezier(.2,.8,.3,1) both; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+    select { background-image: none; }
+  </style>
+</head>
+<body class="bg-[#F6F4FD] font-sans text-slate-800 antialiased">
+  <main class="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
+    <!-- ════════════ SATU CARD KESATUAN ════════════ -->
+    <section class="fade-up relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-card">
+      <!-- dekorasi glow -->
+      <div aria-hidden="true" class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-violet-300/30 blur-3xl"></div>
+
+      <!-- ── Baris 1: Identitas dashboard ── -->
+      <div class="relative flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
+        <div class="flex items-center gap-3.5">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-lg shadow-violet-200/70">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold leading-tight text-slate-800">Arrivals Performance</h1>
+            <p class="text-xs text-slate-500">Room sold · % sold · ARR · Revenue — satu tampilan</p>
+          </div>
+        </div>
+        <div class="relative flex items-center gap-2">
+          <span class="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Live
+          </span>
+          <span id="ctxChip" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">—</span>
+        </div>
+      </div>
+
+      <!-- ── Baris 2: Filter (daily 1–31 · monthly 1–12 · yearly past/current/future) ── -->
+      <div class="relative border-b border-slate-100 bg-slate-50/60 px-6 py-3.5">
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Filters</span>
+          <div class="flex items-center gap-1 rounded-lg bg-slate-200/70 p-1" id="modeTabs">
+            <div class="mode-seg flex items-center gap-1.5 rounded-md px-2.5 py-1 transition" data-seg="daily">
+              <button type="button" data-mode="daily" class="mode-tab text-xs font-semibold text-slate-500 transition hover:text-slate-800">Daily</button>
+              <span class="seg-vals hidden items-center gap-1">
+                <select id="dayFrom" aria-label="Dari hari" class="cursor-pointer rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-200"></select>
+                <span class="text-[10px] font-bold text-slate-400">→</span>
+                <select id="dayTo" aria-label="Sampai hari" class="cursor-pointer rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-200"></select>
+              </span>
+            </div>
+            <div class="mode-seg flex items-center gap-1.5 rounded-md px-2.5 py-1 transition" data-seg="monthly">
+              <button type="button" data-mode="monthly" class="mode-tab text-xs font-semibold text-slate-500 transition hover:text-slate-800">Monthly</button>
+              <span class="seg-vals hidden items-center gap-1">
+                <select id="monthFrom" aria-label="Dari bulan" class="cursor-pointer rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-200"></select>
+                <span class="text-[10px] font-bold text-slate-400">→</span>
+                <select id="monthTo" aria-label="Sampai bulan" class="cursor-pointer rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-200"></select>
+              </span>
+            </div>
+            <div class="mode-seg flex items-center gap-1.5 rounded-md px-2.5 py-1 transition" data-seg="yearly">
+              <button type="button" data-mode="yearly" class="mode-tab text-xs font-semibold text-slate-500 transition hover:text-slate-800">Yearly</button>
+              <span class="seg-vals hidden items-center gap-1">
+                <select id="yearFrom" aria-label="Dari tahun" class="cursor-pointer rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-200"></select>
+                <span class="text-[10px] font-bold text-slate-400">→</span>
+                <select id="yearTo" aria-label="Sampai tahun" class="cursor-pointer rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-200"></select>
+              </span>
+            </div>
+          </div>
+          <span id="ctxMonthWrap" class="hidden">
+            <select id="monthSel" aria-label="Bulan konteks range harian" class="cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"></select>
+          </span>
+          <span id="ctxYearWrap">
+            <select id="yearSel" aria-label="Tahun konteks range harian & bulanan" class="cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"></select>
+          </span>
+          <span id="rangeHint" class="ml-auto text-[11px] text-slate-400"></span>
+        </div>
+      </div>
+      <!-- ── Baris 3: Point A + Point B (dua kolom, satu card) ── -->
+      <div class="relative grid grid-cols-1 border-b border-slate-100 lg:grid-cols-2">
+        <!-- Point A -->
+        <div class="px-6 py-5 lg:border-r lg:border-slate-100">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100 text-[11px] font-extrabold text-blue-700">A</span>
+              <div>
+                <h2 class="text-sm font-bold text-slate-800">Room Sold &amp; % Sold</h2>
+                <p class="text-[11px] text-slate-500">Switch data: % definition atau all rooms</p>
+              </div>
+            </div>
+            <div class="flex rounded-lg bg-slate-100 p-1" id="pctTabs">
+              <button type="button" data-pct="def" class="pct-tab seg-btn rounded-md px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Def %</button>
+              <button type="button" data-pct="all" class="pct-tab seg-btn rounded-md px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">All</button>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Room Sold</p>
+              <p id="roomSoldVal" class="mt-1 text-3xl font-extrabold leading-none text-slate-800">—</p>
+              <p id="roomSoldSub" class="mt-1.5 text-[11px] leading-snug text-slate-500">—</p>
+            </div>
+            <div class="border-l border-slate-100 pl-4">
+              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">% Sold
+                <span id="pctTag" class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 font-semibold normal-case text-slate-500">def %</span>
+              </p>
+              <p id="pctVal" class="mt-1 text-3xl font-extrabold leading-none text-blue-600">—</p>
+              <p id="pctSub" class="mt-1.5 text-[11px] leading-snug text-slate-500">—</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div id="occBar" class="h-full w-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500"></div>
+            </div>
+            <div class="mt-1.5 flex justify-between text-[10px] font-medium text-slate-400">
+              <span>0%</span><span>Target occupancy 75%</span><span>100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Point B -->
+        <div class="border-t border-slate-100 px-6 py-5 lg:border-t-0">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-100 text-[11px] font-extrabold text-emerald-700">B</span>
+              <div>
+                <h2 class="text-sm font-bold text-slate-800">ARR <span class="font-medium text-slate-400">· Average Room Rate</span></h2>
+                <p class="text-[11px] text-slate-500">Room revenue ÷ rooms sold</p>
+              </div>
+            </div>
+            <span id="arrDelta" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">—</span>
+          </div>
+          <div class="mt-4 flex items-end justify-between gap-4">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Average Room Rate</p>
+              <p id="arrVal" class="mt-1 text-3xl font-extrabold leading-none text-slate-800">—</p>
+            </div>
+            <span id="arrBasisTag" class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">gross</span>
+          </div>
+          <p id="arrSub" class="mt-1.5 text-[11px] text-slate-500">—</p>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="rounded-lg bg-slate-50 px-3.5 py-3 transition hover:bg-slate-100">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Room Revenue</p>
+              <p id="arrRoomRev" class="mt-1 text-sm font-extrabold text-slate-800">—</p>
+            </div>
+            <div class="rounded-lg bg-slate-50 px-3.5 py-3 transition hover:bg-slate-100">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rooms Sold</p>
+              <p id="arrSold" class="mt-1 text-sm font-extrabold text-slate-800">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ── Baris 4: Point C — Revenue ── -->
+      <div class="relative px-6 py-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="flex h-6 w-6 items-center justify-center rounded-md bg-violet-100 text-[11px] font-extrabold text-violet-700">C</span>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Revenue</h2>
+              <p class="text-[11px] text-slate-500">Room · Food &amp; Beverage · Other · Total — klik bar untuk detail di modal</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex rounded-lg bg-slate-100 p-1" id="basisTabs">
+              <button type="button" data-basis="gross" class="basis-tab seg-btn rounded-md px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Gross</button>
+              <button type="button" data-basis="nett" class="basis-tab seg-btn rounded-md px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Nett</button>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Revenue</p>
+              <p id="revTotalVal" class="text-lg font-extrabold leading-tight text-slate-800">—</p>
+            </div>
+          </div>
+        </div>
+        <div id="revChart" class="mt-5 flex h-60 items-end gap-3 sm:gap-6"></div>
+        <p class="mt-3 text-center text-[11px] text-slate-400">Tip: klik salah satu bar untuk membuka detail breakdown-nya.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ════════════ MODAL DETAIL REVENUE ════════════ -->
+  <div id="revModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6">
+    <div class="modal-scrim absolute inset-0 bg-slate-900/50 backdrop-blur-sm" data-modal-close></div>
+    <div role="dialog" aria-modal="true" aria-labelledby="detailTitle" class="modal-panel relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-modal">
+      <!-- header modal -->
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span id="detailDot" class="h-2.5 w-2.5 rounded-full bg-blue-500"></span>
+          <h3 id="detailTitle" class="text-sm font-bold text-slate-800">—</h3>
+          <span id="detailValue" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-600">—</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div id="groupTabs" class="flex rounded-lg bg-slate-100 p-1">
+            <button type="button" data-group="segment" class="group-tab seg-btn rounded-md px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Segment</button>
+            <button type="button" data-group="type" class="group-tab seg-btn rounded-md px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800">Room Type</button>
+          </div>
+          <button type="button" id="detailClose" aria-label="Tutup detail" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- body modal -->
+      <div class="overflow-y-auto px-6 py-5">
+        <div id="detailChart" class="flex h-56 items-end gap-3"></div>
+        <p id="detailNote" class="mt-4 text-[11px] leading-relaxed text-slate-400">—</p>
+      </div>
+    </div>
+  </div>
+<script>
+/* ═══════════════ STATE ═══════════════ */
+const $ = id => document.getElementById(id);
+const CURRENT_YEAR = new Date().getFullYear();
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TOTAL_ROOMS = 130;
+const NETT_F = { room: 1 / 1.21, fnb: 1 / 1.11, other: 1 / 1.11 }; // nett = excl. tax+service (room) / excl. tax
+
+const state = {
+  mode: 'daily',       // daily | monthly | yearly
+  day: new Date().getDate(),
+  month: new Date().getMonth() + 1,
+  year: CURRENT_YEAR,
+  dayEnd: new Date().getDate(),        // ujung akhir range harian
+  monthEnd: new Date().getMonth() + 1, // ujung akhir range bulanan
+  yearEnd: CURRENT_YEAR,               // ujung akhir range tahunan
+  pctDef: 'def',       // 'def' = % vs available rooms | 'all' = % vs total inventory
+  basis: 'gross',      // gross | nett
+  detail: null,        // room | fnb | other | total | null
+  group: 'segment',    // segment | type
+};
+let modalOpen = false;
+let lastTrigger = null;
+
+/* ═══════════════ UTILS ═══════════════ */
+const nfmt = v => Math.round(v).toLocaleString('id-ID');
+const fmtIDR = v => 'Rp ' + nfmt(v);
+function fmtShort(v) {
+  const a = Math.abs(v);
+  if (a >= 1e9) return 'Rp ' + (v / 1e9).toFixed(2).replace('.', ',') + ' M';
+  if (a >= 1e6) return 'Rp ' + (v / 1e6).toFixed(1).replace('.', ',') + ' jt';
+  if (a >= 1e3) return 'Rp ' + nfmt(v / 1e3) + ' rb';
+  return 'Rp ' + nfmt(v);
+}
+const pct1 = x => (x * 100).toFixed(1).replace('.', ',') + '%';
+const daysInMonth = (y, m) => new Date(y, m, 0).getDate();
+const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function clampDay() {
+  const max = daysInMonth(state.year, state.month);
+  if (state.day > max) state.day = max;
+  if (state.dayEnd > max) state.dayEnd = max;
+}
+function fixRanges() {
+  if (state.dayEnd < state.day) state.dayEnd = state.day;
+  if (state.monthEnd < state.month) state.monthEnd = state.month;
+  if (state.yearEnd < state.year) state.yearEnd = state.year;
+  clampDay();
+}
+
+/* ═══════════════ DATA (mock deterministik per filter) ═══════════════ */
+function computeData(p) {
+  p = p || { mode: state.mode, day: state.day, month: state.month, year: state.year };
+  let seed = p.year * 10000 + p.month * 100 + p.day;
+  if (p.mode === 'monthly') seed = p.year * 100 + p.month;
+  if (p.mode === 'yearly') seed = p.year;
+  const rnd = mulberry32(seed + 911);
+  const days = p.mode === 'daily' ? 1
+    : p.mode === 'monthly' ? daysInMonth(p.year, p.month)
+    : (isLeap(p.year) ? 366 : 365);
+  const ooo = 3 + Math.floor(rnd() * 8);                 // out-of-order rooms / hari
+  const availDaily = TOTAL_ROOMS - ooo;
+  let sold = Math.round(availDaily * days * (0.55 + rnd() * 0.40));
+  if (p.mode === 'daily') sold = Math.min(sold, availDaily);
+  sold = Math.max(1, sold);
+  const arr = Math.round((900000 + rnd() * 900000) / 50000) * 50000;
+  const room = sold * arr;
+  const fnb = Math.round(room * (0.20 + rnd() * 0.25) / 1000) * 1000;
+  const other = Math.round(room * (0.04 + rnd() * 0.08) / 1000) * 1000;
+  const avail = availDaily * days;
+  const totalRooms = TOTAL_ROOMS * days;
+  return {
+    days, ooo, availDaily, avail, totalRooms, sold, arr, room, fnb, other,
+    total: room + fnb + other,
+    occDef: sold / avail,
+    occAll: sold / totalRooms,
+  };
+}
+/* ═══════════════ RANGE AGGREGATION ═══════════════ */
+function rangeSpec() {
+  const s = state, list = [];
+  if (s.mode === 'daily') {
+    for (let d = s.day; d <= s.dayEnd; d++) list.push({ mode: 'daily', day: d, month: s.month, year: s.year });
+    return list;
+  }
+  if (s.mode === 'monthly') {
+    for (let m = s.month; m <= s.monthEnd; m++) list.push({ mode: 'monthly', day: 1, month: m, year: s.year });
+    return list;
+  }
+  for (let y = s.year; y <= s.yearEnd; y++) list.push({ mode: 'yearly', day: 1, month: 12, year: y });
+  return list;
+}
+function aggregate(list) {
+  if (list.length === 1) return computeData(list[0]);
+  let sold = 0, room = 0, fnb = 0, other = 0, avail = 0, totalRooms = 0, days = 0;
+  for (const p of list) {
+    const x = computeData(p);
+    sold += x.sold; room += x.room; fnb += x.fnb; other += x.other;
+    avail += x.avail; totalRooms += x.totalRooms; days += x.days;
+  }
+  return {
+    days, sold, room, fnb, other, avail, totalRooms,
+    ooo: Math.round((totalRooms - avail) / days),
+    arr: Math.round(room / sold),
+    total: room + fnb + other,
+    occDef: sold / avail,
+    occAll: sold / totalRooms,
+  };
+}
+const currentData = () => aggregate(rangeSpec());
+function shiftPeriod(p, n) {
+  if (p.mode === 'daily') {
+    const dt = new Date(p.year, p.month - 1, p.day - n);
+    return { mode: 'daily', day: dt.getDate(), month: dt.getMonth() + 1, year: dt.getFullYear() };
+  }
+  if (p.mode === 'monthly') {
+    const idx = p.year * 12 + (p.month - 1) - n;
+    return { mode: 'monthly', day: 1, month: (idx % 12) + 1, year: Math.floor(idx / 12) };
+  }
+  return { mode: 'yearly', day: 1, month: 12, year: p.year - n };
+}
+function prevData() {
+  const list = rangeSpec();
+  return aggregate(list.map(p => shiftPeriod(p, list.length)));
+}
+function revenueView(d) {
+  const room = state.basis === 'nett' ? d.room * NETT_F.room : d.room;
+  const fnb = state.basis === 'nett' ? d.fnb * NETT_F.fnb : d.fnb;
+  const other = state.basis === 'nett' ? d.other * NETT_F.other : d.other;
+  return { room, fnb, other, total: room + fnb + other };
+}
+/* ═══════════════ BREAKDOWN DEFINITIONS ═══════════════ */
+const BREAKDOWN_DEFS = {
+  room_segment: { items: [['Corporate', 30], ['OTA', 26], ['Travel Agent', 14], ['Group / MICE', 12], ['Walk-in', 10], ['Loyalty Member', 8]] },
+  room_type:    { items: [['Deluxe', 34], ['Superior', 26], ['Suite', 18], ['Family', 13], ['Penthouse', 9]] },
+  fnb:          { items: [['Restaurant', 42], ['Room Service', 24], ['Banquet & Event', 20], ['Cafe & Bar', 14]] },
+  other:        { items: [['Spa & Wellness', 35], ['Laundry', 25], ['Airport Transfer', 22], ['Retail Shop', 18]] },
+};
+const DETAIL_LABEL = {
+  room: () => (state.group === 'segment' ? 'Room Revenue · by Segment' : 'Room Revenue · by Room Type'),
+  fnb: () => 'Food & Beverage · by Outlet',
+  other: () => 'Other Revenue · by Service',
+  total: () => 'Total Revenue · by Stream',
+};
+const DETAIL_DOT = { room: 'bg-blue-500', fnb: 'bg-violet-500', other: 'bg-amber-500', total: 'bg-slate-800' };
+function breakdownFor(kind) {
+  const d = currentData();
+  const rv = revenueView(d);
+  if (kind === 'total') {
+    return { items: [['Room', rv.room], ['Food & Beverage', rv.fnb], ['Other', rv.other]] };
+  }
+  const defKey = kind === 'room' ? (state.group === 'segment' ? 'room_segment' : 'room_type') : kind;
+  const defs = BREAKDOWN_DEFS[defKey];
+  const base = rv[kind];
+  const rnd = mulberry32(kind.length * 7919 + state.day * 31 + state.month * 17 + state.year);
+  const jittered = defs.items.map(([name, w]) => [name, w * (0.85 + rnd() * 0.3)]);
+  const sumW = jittered.reduce((a, x) => a + x[1], 0);
+  let acc = 0;
+  const items = jittered.map(([name, w], i) => {
+    let v = Math.round((base * w / sumW) / 1000) * 1000;
+    if (i === jittered.length - 1) v = Math.round(base) - acc;
+    acc += v;
+    return [name, v];
+  });
+  return { items };
+}
+
+/* ═══════════════ RENDER: FILTERS + KPI ═══════════════ */
+function paintTabs(sel, dataAttr, val) {
+  document.querySelectorAll(sel).forEach(b => {
+    const on = b.dataset[dataAttr] === val;
+    b.classList.toggle('bg-white', on);
+    b.classList.toggle('shadow-sm', on);
+    b.classList.toggle('text-slate-800', on);
+    b.classList.toggle('text-slate-500', !on);
+  });
+}
+function renderFilters() {
+  document.querySelectorAll('.mode-tab').forEach(b => {
+    const on = b.dataset.mode === state.mode;
+    b.classList.toggle('text-slate-800', on);
+    b.classList.toggle('text-slate-500', !on);
+  });
+  document.querySelectorAll('.mode-seg').forEach(s => {
+    const on = s.dataset.seg === state.mode;
+    s.classList.toggle('bg-white', on);
+    s.classList.toggle('shadow-sm', on);
+    const vals = s.querySelector('.seg-vals');
+    if (vals) { vals.classList.toggle('hidden', !on); vals.classList.toggle('flex', on); }
+  });
+  paintTabs('.pct-tab', 'pct', state.pctDef);
+  paintTabs('.basis-tab', 'basis', state.basis);
+  paintTabs('.group-tab', 'group', state.group);
+  $('dayFrom').value = state.day;
+  $('dayTo').value = state.dayEnd;
+  $('monthFrom').value = state.month;
+  $('monthTo').value = state.monthEnd;
+  $('yearFrom').value = state.year;
+  $('yearTo').value = state.yearEnd;
+  $('monthSel').value = state.month;
+  $('yearSel').value = state.year;
+  $('ctxMonthWrap').classList.toggle('hidden', state.mode !== 'daily');
+  $('ctxYearWrap').classList.toggle('hidden', state.mode === 'yearly');
+  const rng =
+    state.mode === 'daily'
+      ? (state.day === state.dayEnd
+          ? `${state.day} ${MONTHS[state.month - 1]} ${state.year}`
+          : `${state.day}–${state.dayEnd} ${MONTHS[state.month - 1]} ${state.year}`)
+      : state.mode === 'monthly'
+        ? (state.month === state.monthEnd
+            ? `${MONTHS[state.month - 1]} ${state.year}`
+            : `${MONTHS[state.month - 1]}–${MONTHS[state.monthEnd - 1]} ${state.year}`)
+        : (state.year === state.yearEnd ? String(state.year) : `${state.year}–${state.yearEnd}`);
+  const perLabel = state.mode === 'daily' ? 'Daily' : state.mode === 'monthly' ? 'Monthly' : 'Yearly';
+  $('rangeHint').textContent = `${perLabel} range · ${rng}`;
+  $('ctxChip').textContent = rng;
+}
+function renderKPI() {
+  const d = currentData();
+  const pd = prevData();
+  const n = rangeSpec().length;
+  /* — Point A: Room Sold & % Sold — */
+  const isDef = state.pctDef === 'def';
+  const pct = isDef ? d.occDef : d.occAll;
+  $('roomSoldVal').textContent = nfmt(d.sold);
+  $('roomSoldSub').textContent = isDef
+    ? `of ${nfmt(d.avail)} available room-nights · ${nfmt(d.ooo)} OOO/day${n > 1 ? ' (rata-rata)' : ''}`
+    : `of ${nfmt(d.totalRooms)} total room-nights · all inventory`;
+  $('pctVal').textContent = pct1(pct);
+  $('pctVal').className = 'mt-1 text-3xl font-extrabold leading-none ' +
+    (pct >= 0.75 ? 'text-emerald-600' : pct >= 0.6 ? 'text-blue-600' : 'text-amber-500');
+  $('pctSub').textContent = isDef
+    ? 'Room Sold ÷ available rooms'
+    : 'Room Sold ÷ semua kamar (incl. OOO)';
+  $('pctTag').textContent = isDef ? 'def %' : 'all';
+  $('occBar').style.width = Math.min(100, pct * 100).toFixed(1) + '%';
+  /* — Point B: ARR — */
+  const f = state.basis === 'nett' ? NETT_F.room : 1;
+  const arrNow = d.arr * f;
+  const arrPrev = pd.arr * f;
+  $('arrVal').textContent = fmtIDR(arrNow);
+  $('arrBasisTag').textContent = state.basis === 'nett' ? 'nett' : 'gross';
+  $('arrRoomRev').textContent = fmtShort(d.room * f);
+  $('arrSold').textContent = nfmt(d.sold);
+  $('arrSub').textContent = `Room revenue ${fmtShort(d.room * f)} ÷ ${nfmt(d.sold)} rooms sold` +
+    (state.basis === 'nett' ? ' · excl. tax & service' : ' · incl. tax & service');
+  const delta = arrPrev ? (arrNow - arrPrev) / arrPrev : 0;
+  const up = delta >= 0;
+  const per = n > 1 ? 'range' : state.mode === 'daily' ? 'day' : state.mode === 'monthly' ? 'month' : 'year';
+  const badge = $('arrDelta');
+  badge.className = 'rounded-full px-2.5 py-1 text-xs font-bold ' +
+    (up ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600');
+  badge.textContent = `${up ? '▲' : '▼'} ${Math.abs(delta * 100).toFixed(1).replace('.', ',')}% vs prev ${per}`;
+}
+/* ═══════════════ RENDER: REVENUE (Point C) ═══════════════ */
+function renderRevenue() {
+  const d = currentData();
+  const rv = revenueView(d);
+  const bars = [
+    { key: 'room', label: 'Room', value: rv.room, cls: 'bg-blue-500' },
+    { key: 'fnb', label: 'F&B', value: rv.fnb, cls: 'bg-violet-500' },
+    { key: 'other', label: 'Other', value: rv.other, cls: 'bg-amber-500' },
+    { key: 'total', label: 'Total', value: rv.total, cls: 'bg-slate-800' },
+  ];
+  const max = Math.max(...bars.map(b => b.value));
+  $('revTotalVal').textContent = fmtShort(rv.total);
+  $('revChart').innerHTML = bars.map(b => {
+    const h = Math.max(8, Math.round((b.value / max) * 100));
+    const sel = state.detail === b.key;
+    return `<button type="button" data-rev="${b.key}" aria-haspopup="dialog" aria-pressed="${sel}" class="bar-btn flex h-full flex-1 flex-col items-center justify-end rounded-lg">
+      <span class="mb-1.5 text-[11px] font-bold ${sel ? 'text-slate-900' : 'text-slate-500'}">${fmtShort(b.value)}</span>
+      <div class="rev-bar w-full max-w-[76px] rounded-t-lg ${b.cls}${sel ? ' ring-2 ring-slate-900 ring-offset-2' : ''}" style="height:${h}%"></div>
+      <span class="mt-2 text-xs font-semibold ${sel ? 'text-slate-900' : 'text-slate-500'}">${b.label}</span>
+    </button>`;
+  }).join('');
+}
+
+/* ═══════════════ MODAL DETAIL ═══════════════ */
+function openModal() {
+  modalOpen = true;
+  const m = $('revModal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  $('detailClose').focus();
+}
+function closeModal() {
+  if (!modalOpen) return;
+  modalOpen = false;
+  const m = $('revModal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+  document.body.style.overflow = '';
+  const key = lastTrigger && lastTrigger.dataset ? lastTrigger.dataset.rev : null;
+  lastTrigger = null;
+  const back = key ? document.querySelector('[data-rev="' + key + '"]') : null;
+  if (back && back.focus) back.focus();
+}
+function closeDetail() {
+  state.detail = null;
+  renderRevenue();
+  renderDetail();
+}
+function renderDetail() {
+  if (!state.detail) { closeModal(); return; }
+  const d = currentData();
+  const rv = revenueView(d);
+  const bd = breakdownFor(state.detail);
+  const sum = bd.items.reduce((a, x) => a + x[1], 0);
+  const max = Math.max(...bd.items.map(x => x[1]));
+  $('groupTabs').classList.toggle('hidden', state.detail !== 'room');
+  $('detailTitle').textContent = DETAIL_LABEL[state.detail]();
+  $('detailValue').textContent = fmtShort(state.detail === 'total' ? rv.total : rv[state.detail]);
+  $('detailDot').className = 'h-2.5 w-2.5 rounded-full ' + DETAIL_DOT[state.detail];
+  const grads = {
+    room: 'from-blue-600 to-blue-400',
+    fnb: 'from-violet-600 to-violet-400',
+    other: 'from-amber-600 to-amber-400',
+    total: 'from-slate-700 to-slate-500',
+  };
+  $('detailChart').innerHTML = bd.items.map(([name, v]) => {
+    const h = Math.max(6, Math.round((v / max) * 100));
+    const share = sum ? (v / sum) * 100 : 0;
+    return `<div class="flex h-full flex-1 flex-col items-center justify-end">
+      <span class="mb-1 text-[11px] font-bold text-slate-700">${fmtShort(v)}</span>
+      <div class="w-full max-w-[70px] rounded-t-lg bg-gradient-to-t ${grads[state.detail]}" style="height:${h}%"></div>
+      <span class="mt-2 text-center text-[11px] font-semibold leading-tight text-slate-600">${name}</span>
+      <span class="text-[10px] text-slate-400">${share.toFixed(1).replace('.', ',')}%</span>
+    </div>`;
+  }).join('');
+  let note = state.basis === 'nett'
+    ? 'Basis: Nett — room excl. 11% tax + 10% service; F&B & other excl. 11% tax. Nilai menjumlah sampai ke nilai induk.'
+    : 'Basis: Gross — termasuk tax & service. Nilai menjumlah sampai ke nilai induk.';
+  if (state.detail === 'room') note += ' Gunakan tombol Segment / Room Type untuk berganti pengelompokan.';
+  $('detailNote').textContent = note;
+  if (!modalOpen) openModal();
+}
+function renderAll() { renderFilters(); renderKPI(); renderRevenue(); renderDetail(); }
+
+function openValueDropdown(mode) {
+  const sel = mode === 'daily' ? $('dayFrom') : mode === 'monthly' ? $('monthFrom') : $('yearFrom');
+  if (sel && typeof sel.showPicker === 'function') {
+    try { sel.showPicker(); } catch (err) { /* fallback: user klik select-nya langsung */ }
+  }
+}
+/* ═══════════════ EVENTS ═══════════════ */
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('[data-modal-close]') || t.closest('#detailClose')) { closeDetail(); return; }
+  const modeBtn = t.closest('.mode-tab');
+  const seg = t.closest('.mode-seg');
+  if (modeBtn || seg) {
+    const mode = modeBtn ? modeBtn.dataset.mode : seg.dataset.seg;
+    if (state.mode !== mode) { state.mode = mode; fixRanges(); renderAll(); }
+    if (modeBtn) openValueDropdown(mode);
+    return;
+  }
+  const pctBtn = t.closest('.pct-tab');
+  if (pctBtn) { state.pctDef = pctBtn.dataset.pct; renderFilters(); renderKPI(); return; }
+  const basisBtn = t.closest('.basis-tab');
+  if (basisBtn) { state.basis = basisBtn.dataset.basis; renderAll(); return; }
+  const groupBtn = t.closest('.group-tab');
+  if (groupBtn) { state.group = groupBtn.dataset.group; renderFilters(); renderDetail(); return; }
+  const revBtn = t.closest('[data-rev]');
+  if (revBtn) {
+    state.detail = revBtn.dataset.rev;
+    lastTrigger = revBtn;
+    renderRevenue();
+    renderDetail();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (!modalOpen) return;
+  if (e.key === 'Escape') { closeDetail(); return; }
+  if (e.key === 'Tab') {
+    const f = $('revModal').querySelectorAll('button, [href], select, input');
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+$('dayFrom').addEventListener('change', e => { state.day = +e.target.value; fixRanges(); renderAll(); });
+$('dayTo').addEventListener('change', e => { state.dayEnd = +e.target.value; if (state.dayEnd < state.day) state.day = state.dayEnd; clampDay(); renderAll(); });
+$('monthFrom').addEventListener('change', e => { state.month = +e.target.value; fixRanges(); renderAll(); });
+$('monthTo').addEventListener('change', e => { state.monthEnd = +e.target.value; if (state.monthEnd < state.month) state.month = state.monthEnd; clampDay(); renderAll(); });
+$('yearFrom').addEventListener('change', e => { state.year = +e.target.value; fixRanges(); renderAll(); });
+$('yearTo').addEventListener('change', e => { state.yearEnd = +e.target.value; if (state.yearEnd < state.year) state.year = state.yearEnd; clampDay(); renderAll(); });
+$('monthSel').addEventListener('change', e => { state.month = +e.target.value; fixRanges(); renderAll(); });
+$('yearSel').addEventListener('change', e => { state.year = +e.target.value; fixRanges(); renderAll(); });
+
+/* ═══════════════ INIT ═══════════════ */
+(function init() {
+  const fillDays = el => { for (let i = 1; i <= 31; i++) el.add(new Option(String(i), i)); };
+  const fillMonths = el => MONTHS.forEach((m, i) => el.add(new Option(`${i + 1} · ${m}`, i + 1)));
+  const fillYears = el => {
+    for (let y = CURRENT_YEAR - 5; y <= CURRENT_YEAR + 3; y++) {
+      const tag = y === CURRENT_YEAR ? 'current' : y < CURRENT_YEAR ? 'past' : 'future';
+      el.add(new Option(`${y} (${tag})`, y));
+    }
+  };
+  fillDays($('dayFrom')); fillDays($('dayTo'));
+  fillMonths($('monthFrom')); fillMonths($('monthTo')); fillMonths($('monthSel'));
+  fillYears($('yearFrom')); fillYears($('yearTo')); fillYears($('yearSel'));
+  fixRanges();
+  renderAll();
+})();
+</script>
+</body>
+</html>
